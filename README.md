@@ -1,5 +1,5 @@
 # ASCII-SPICE Circuit Description Language (ASCDL)
-ASCDL is a compact ASCII schematic language for specifying planar analog circuits. It compiles to standard SPICE netlist `.net` text files, which can be opened with the free [LTSpice](https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html) program.
+ASCDL is a compact ASCII schematic language for specifying analog circuits. It compiles to standard SPICE netlist `.net` text files, which can be opened with the free [LTSpice](https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html) program.
 
 As a tentative future goal, we will attempt to build our own Python program for SPICE using [modified nodal analysis](https://en.wikipedia.org/wiki/Modified_nodal_analysis).
 
@@ -161,7 +161,7 @@ Wires are orthogonal straight line segments. There are 3 wire characters:
 +  Connection or corner
 ```
 
-Horizontal wires `-` and vertical wires `|` may only intersect at `+`, which connects all adjacent wires. We do not support wires crossing over, hence only planar circuits are possible.
+Horizontal wires `-` and vertical wires `|` may only intersect at `+`, which connects all adjacent wires. We do not support wires crossing over.
 
 A *node* is a connected network of wire characters.
 
@@ -184,7 +184,7 @@ Ground is the special node `0` in SPICE. It is represented by:
 =
 ```
 
-Each disconnected network in [SCHEMATIC] must contain at least 1 connection to the ground node symbol `=`, i.e. there should be an electrical path to ground.
+Each disconnected network in [SCHEMATIC] must contain at least 1 connection to the ground node symbol `=` after evaluating connectivity, i.e. there should be an electrical path to ground.
 
 All occurrences of `=` represent the same global ground node in SPICE.
 
@@ -404,6 +404,7 @@ Gain units are volts per ampere.
 ## Node Assignment
 The compiler must:
 1. Identify all wire-connected nodes.
-2. Merge all nodes touching a ground symbol into node `0` (the global SPICE ground).
-3. Associate user-defined labels with nodes (these replace numeric nodes).
+2. Collect and merge all named nodes with the same user-defined label. Assign a SPICE node to each named node using their labels.
+3. Merge all nodes touching a ground symbol into node `0` (the global SPICE ground).
 4. Assign consecutive numbered nodes `N001,N002,...` to all unlabelled nodes.
+5. Perform ground and connectivity checks.
