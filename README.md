@@ -185,25 +185,26 @@ Every branch appearing in [CIRCUIT] must have exactly one value definition in [V
 - Frequency and phase may only be specified for independent sources V and I
 - Units are Hertz for frequency and degrees for phase
 
-Values for magnitude, frequency and phase are specified as:
+Magnitude, frequency and phase are to be specified as integer or decimal values:
 ```
 [+-]?<Integer or Float>[suffix]? 
 ```
 
-The *suffix* can be scientific notation:
+The *suffix* can be scientific notation (exponential form):
 ```text
 e+8
 e-11
 ```
 
-or a single character abbreviation (case-sensitive):
+or one of the following metric prefix abbreviations (case-insensitive):
 ```text
+f = 1e-15
 p = 1e-12
 n = 1e-9
 u = 1e-6
 m = 1e-3
 k = 1e3
-M = 1e6
+Meg = 1e6
 G = 1e9
 T = 1e12
 ```
