@@ -208,27 +208,36 @@ Each terminal of a branch must connect to:
 2. A connection point or corner `+`
 3. Ground `=`
 
-### Terminal Numbering
-Horizontal:
+### Terminal Labels
+Horizontal branch:
 ```text
-terminal1 = left
-terminal2 = right
+positive = left
+negative = right
+
+[+]-->[-]
 ```
-Vertical:
+Vertical branch:
 ```text
-terminal1 = top
-terminal2 = bottom
+positive = top
+negative = bottom
+
+[+]
+ |
+ V
+[-]
 ```
 
 ### Sign Convention
-The *passive sign convention* for electrical quantities applies to every branch `B`.
+The *passive sign convention* applies to every branch `B` and defines reference signs/directions for electrical quantities.
 
 The branch voltage, branch current and power are defined as:
 ```
-V(B) = V(B.terminal1) - V(B.terminal2)
-I(B) = current entering terminal1 and leaving terminal2
+V(B) = V(B.positive) - V(B.negative)
+I(B) = current entering positive terminal and leaving negative terminal
 P(B) = V(B) × I(B)
 ```
+
+Note that for a source providing power to the circuit, the branch current `I(B)` will usually be negative.
 
 ## Branch Values
 Every branch appearing in [SCHEMATIC] must have exactly one value definition in [VALUES], and vice versa. The value format depends on the branch type. General notes:
@@ -299,7 +308,7 @@ OFF state:
 ```
 where:
 ```text
-Vd = V(terminal1) - V(terminal2)
+Vd = V(positive) - V(negative)
 ```
 
 This is represented in the SPICE netlist by the model:
@@ -312,18 +321,18 @@ Thus:
 ```text
 D1 = 0.7
 ```
-conducts from terminal1 to terminal2,
+conducts from positive to negative,
 while:
 ```text
 D1 = -0.7
 ```
-conducts from terminal2 to terminal1.
+conducts from negative to positive.
 
 ### Independent Voltage Source
 ```text
 Vx = <voltage> [<frequency> [<phase>]] | <expression>
 ```
-- Voltage (volts) is measured from terminal1 to terminal2.
+- Voltage (volts) is measured from positive to negative.
 - A negative value reverses polarity.
 - Frequency and phase are optional and will default to 0 if not specified.
 - Zero frequency and zero phase represents a DC voltage source.
@@ -339,7 +348,7 @@ Note for `PULSE` command: if a Period is not specified, the waveform will be non
 ```text
 Ix = <current> [<frequency> [<phase>]] | <expression>
 ```
-- Current (amperes) flows from terminal1 to terminal2.
+- Current (amperes) enters from negative and leaves positive, i.e. for a positive value, the branch current is *negative*.
 - A negative value reverses direction.
 - Frequency and phase are optional and will default to 0 if not specified.
 - Zero frequency and zero phase represents a DC current source.
@@ -369,6 +378,7 @@ Dependent sources, a.k.a. *controlled sources*, are defined by a gain value and 
 - E and H are voltage sources, proportional to the reference branch voltage
 - G and F are current sources, proportional to the reference branch current
 - Due to SPICE implementation details, the reference branch for current-controlled sources F and H must be a voltage source (V or H element).
+- The same direction conventions apply as for independent sources.
 
 #### Voltage-Controlled Voltage Source (VCVS)
 ```text
