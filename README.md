@@ -1,87 +1,138 @@
 # ASCII-SPICE Circuit Description Language (ASCDL)
-ASCDL is a compact ASCII schematic language for specifying planar analog circuits. It compiles to a standard SPICE netlist.
+ASCDL is a compact ASCII schematic language for specifying planar analog circuits. It compiles to standard SPICE netlist `.net` text files, which can be opened with the free [LTSpice](https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html) program.
 
-Initially we support steady-state analysis only (DC and AC). Transient analysis will come later.
+As a tentative future goal, we will attempt to build our own Python program for SPICE using [modified nodal analysis](https://en.wikipedia.org/wiki/Modified_nodal_analysis).
 
-An example circuit in ASCDL:
+## 0. Examples
 ```text
-Envelope Detector
-* Used to demodulate amplitude-modulated (AM) signals
-* Very cheap and easy to build
+Underdamped RLC Series Circuit
+- Damping ratio = R/2 √(C/L) = 0.158
 
-[CIRCUIT]
-                           +.RX
-                           |
-in.+---+    +--Ro--D1--+---+--R2--+.out
-   |   |    |          |   |      |
-   Vi  Ri   Eo         R1  C1     C2
-   |   |    |          |   |      |
-   =   =    =          =   =      =
+[SCHEMATIC]
+in.+--R1--L1--+.out
+   |          |
+   V1         C1
+   |          |
+   =          =
 
 [VALUES]
-Vi = 0.5 20k
-Ri = 100k
+V1 = PULSE(0 1 0 1u 1u 1)
+R1 = 10k
+L1 = 100m
+C1 = 100p
+
+[COMMANDS]
+.tran 100u
+```
+
+```text
+Envelope Detector with Low-Pass Filter 
+- Used to demodulate amplitude-modulated (AM) signals
+- Very cheap and easy to build
+
+[SCHEMATIC]
+                 +.amp    +.env         # detector has ripples
+                 |        |
+in.+---+    +-Ro-+-D1-+---+--R2--+.out  # LP filtered output
+   |   |    |         |   |      |
+   Bi  Ri   Eo        R1  C1     C2
+   |   |    |         |   |      |
+   =   =    =         =   =      =
+
+[VALUES]
+# Behavioral voltage source produces weak AM signal
+Bi = (1+0.5*sin(2*pi*1k*time))*sin(2*pi*20k*time) V
+Ri = 10k
+Eo = 8 Ri
 Ro = 75
-Eo = 20 R0
 D1 = 0.7
 R1 = 10k
 C1 = 10n
 R2 = 10k
 C2 = 15n
+
+[COMMANDS]
+.tran 1n 4m 1m
 ```
 
-## 1. File Structure
+## Overview
+### File Structure
 ```text
-<optional title>
-<optional comments>
-
-[CIRCUIT]
+[optional comments]
+[SCHEMATIC]
 <ASCII circuit schematic>
-
 [VALUES]
 <branch values>
+[COMMANDS]
+<SPICE dot commands>
 ```
 
-The first line of the file is treated as the title (optional). If no title is given, the default name is the current date/time `YYYYMMDD_HHMMSSS`.
+- Lines before [SCHEMATIC] can be used for a title, descriptions or metadata. They will be directly translated into comments at the top of the netlist file, prefixed with `*`.
+- Any blank lines in the file are ignored.
+- Inline and single-line comments can be added in the [SCHEMATIC], [VALUES] and [COMMANDS] sections using `#`.
+- Multi-line comments are not supported.
 
-Lines of text after the title and before [CIRCUIT] are ignored, and can be used for comments or metadata.
+### Schematic
 
-Any blank lines in the file are also ignored.
+The circuit schematic is a rectangular grid of ASCII characters which represent wires and circuit elements.
+- The line width is calculated after stripping in-line comments and trailing whitespaces (leading whitespaces are preserved).
+- Tabs are not allowed for separation, only spaces.
+- Missing characters at the end of a line are treated as spaces.
 
-### Circuit Schematic
+### Values
+All components in the circuit schematic must be assigned values. See the [Branch Values](#branch-values) section for details.
 
-The circuit schematic is a rectangular grid of ASCII characters which represent wires and circuit elements. Missing characters at the end of a line are treated as spaces.
+### Commands
 
-Tabs are not allowed in the schematic, only spaces.
+At least 1 valid SPICE dot command for simulation should be included. If multiple commands are provided, a separate netlist file will be generated for each command.
 
-## 2. Circuit Elements
+**DC operating point**
+```
+.op
+```
+
+**Transient analysis**
+```
+.tran <Tstop>
+.tran [Tstep] <Tstop> [Tstart [dTmax]]
+```
+
+Refer to the [LTSpice wiki page on dot commands](https://ltwiki.org/LTspiceHelpXVII/LTspiceHelp/html/DotCommands.htm) for other commands.
+
+## Circuit Elements
 All circuit elements are two-terminal.
 
-**Passive Elements**:
+**Passive Elements**
 ```text
 R  Resistor
 L  Inductor
 C  Capacitor
 D  Diode
 ```
-Note that diodes are modelled as *piecewise linear*.
+Note that diodes are modeled as *piecewise linear*.
 
-**Active Elements**:
+**Active Elements**
 ```text
 V  Independent voltage source
 I  Independent current source
+B  Behavioral voltage/current source
 E  Voltage-controlled voltage source
 F  Current-controlled current source
 G  Voltage-controlled current source
 H  Current-controlled voltage source
 ```
 
-Independent sources are sinusoidal:
+By default, independent sources are sinusoidal:
 ```text
-V(t) = Magnitude cos(2 pi Frequency + pi Phase/180)
+V(t) = Magnitude cos(2 pi Frequency Time + pi Phase/180)
 ```
 
-## 3. Branch Names
+Note that we use a cosine function. This is related to sine by
+```
+cos(t) = sin(t-90°)
+```
+
+## Branch Names
 A *branch* is a circuit element, uniquely identified by a 2-character token.
 ```text
 <Type><ID>
@@ -97,32 +148,32 @@ R1
 Ca
 Vz
 ```
-Note the maximum circuit size is capped by the number of branches:
+Note the maximum number of branches in a circuit:
 ```text
 10 types × 36 IDs = 360 branches
 ```
 
-## 4. Wires and Nodes
+## Wires and Nodes
 Wires are orthogonal straight line segments. There are 3 wire characters:
 ```text
 -  Horizontal wire
-|  Vertical vire
+|  Vertical wire
 +  Connection or corner
 ```
 
-Horizontal wires `-` and vertical wires `|` may only intersect at `+`. We do not support wires crossing over, hence only planar circuits are possible.
+Horizontal wires `-` and vertical wires `|` may only intersect at `+`, which connects all adjacent wires. We do not support wires crossing over, hence only planar circuits are possible.
 
 A *node* is a connected network of wire characters.
 
-### Node Labels
-A node with a connection point `+` can be given a label by prefixing or suffixing with `.`:
+### Named Nodes
+A node with a connection point `+` can be given a name (net label) by prefixing or suffixing with `.`:
 ```text
 label.+
 +.label
 ```
-Labels are arbitrary-length words containing any combination of lowercase letters, uppercase letters or digits.
+Labels are arbitrary-length words containing any combination of lowercase or uppercase letters, digits `0..9` and underscores `_`. No whitespaces are permitted. The label must be on the same line as `+`.
 
-The label must be on the same line as `+`. Each node can have at most one label.
+Each node can have at most one label.
 
 ### Ground
 Ground is a special node, represented by a special symbol:
@@ -130,11 +181,11 @@ Ground is a special node, represented by a special symbol:
 =
 ```
 
-Each network in [CIRCUIT] must have at least 1 `=` ground node connected to a branch.
+Each disconnected network in [SCHEMATIC] must contain a connection to `=` ground node, i.e. there should be an electrical path to ground.
 
 All occurrences of `=` represent the same global ground node in SPICE.
 
-## 5. Branch Conventions
+## Branch Conventions
 Horizontal:
 ```text
 +--R1--+
@@ -150,7 +201,7 @@ R2
 =
 ```
 Each terminal of a branch must connect to:
-1. Another branch `Zx`
+1. Another branch e.g. `Rx`
 2. A connection point or corner `+`
 3. Ground `=`
 
@@ -167,36 +218,36 @@ terminal2 = bottom
 ```
 
 ### Sign Convention
-For every branch `B`, we use the following sign convention for electrical quantities:
+The *passive sign convention* for electrical quantities applies to every branch `B`.
+
+The branch voltage, branch current and power are defined as:
 ```
 V(B) = V(B.terminal1) - V(B.terminal2)
 I(B) = current entering terminal1 and leaving terminal2
 P(B) = V(B) × I(B)
 ```
 
-## 6. Branch Values
-Every branch appearing in [CIRCUIT] must have exactly one value definition in [VALUES], and vice versa.
+## Branch Values
+Every branch appearing in [SCHEMATIC] must have exactly one value definition in [VALUES], and vice versa. The value format depends on the branch type. General notes:
+- Magnitude must be defined for all elements
+- Magnitude units depend on the element: volts, amps, ohms, henries, farads, etc.
+- For source elements, frequency units are hertz and phase units are degrees (not radians)
+- SPICE expressions are also supported for sources.
 
+Numeric values are specified as integers or decimal numbers, using a subset of SPICE syntax.
+```
+[<sign>]?<number>[<suffix>]? 
+```
+
+Leading decimal point and trailing decimal points are currently not supported. 
+
+The *suffix* can be scientific notation (exponential form). Examples:
 ```text
-<Branch> = <Magnitude> [<Frequency in Hz> [<Phase in deg>]]
+-0.5e+8
+1.37e-11
 ```
 
-- Magitude must be defined for all elements
-- Frequency and phase may only be specified for independent sources V and I
-- Units are Hertz for frequency and degrees for phase
-
-Magnitude, frequency and phase are to be specified as integer or decimal values:
-```
-[+-]?<Integer or Float>[suffix]? 
-```
-
-The *suffix* can be scientific notation (exponential form):
-```text
-e+8
-e-11
-```
-
-or one of the following metric prefix abbreviations (case-insensitive):
+Alternatively, a value can end in one of the *metric prefix* abbreviations (case-insensitive):
 ```text
 f = 1e-15
 p = 1e-12
@@ -208,31 +259,33 @@ Meg = 1e6
 G = 1e9
 T = 1e12
 ```
+Note that the parser will find the longest-match to differentiate `m / meg`.
+
 Metric prefixes cannot be combined with scientific notation.
 
 ### Resistor
 ```text
-Rx = resistance
+Rx = <resistance>
 ```
 Resistance (ohms) must be positive.
 
 ### Inductor
 ```text
-Lx = inductance
+Lx = <inductance>
 ```
 Inductance (henries) must be positive.
 
 ### Capacitor
 ```text
-Cx = capacitance
+Cx = <capacitance>
 ```
 Capacitance (farads) must be positive.
 
 ### Diode
 ```text
-Dx = Von
+Dx = <Von>
 ```
-We use a simple piecewise linear model:
+We use a simple piecewise linear model where the diode is either fully conducting (ON) or non-conducting (OFF):
 ```text
 ON state:
     Vd = Von
@@ -245,7 +298,13 @@ where:
 ```text
 Vd = V(terminal1) - V(terminal2)
 ```
-A negative value reverses diode orientation.
+
+This is represented in the SPICE netlist by the model:
+```text
+.model Dx D(Vfwd=Von)
+```
+
+A negative value is equivalent to reversing the diode orientation.
 Thus:
 ```text
 D1 = 0.7
@@ -259,59 +318,79 @@ conducts from terminal2 to terminal1.
 
 ### Independent Voltage Source
 ```text
-Vx = voltage [frequency [phase]]
+Vx = <voltage> [<frequency> [<phase>]] | <expression>
 ```
-Voltage (volts) is measured from terminal1 to terminal2.
-A negative value reverses polarity.
+- Voltage (volts) is measured from terminal1 to terminal2.
+- A negative value reverses polarity.
+- Frequency and phase are optional and will default to 0 if not specified.
+- Zero frequency and zero phase represents a DC voltage source.
 
-Frequency and phase are optional and will default to 0 if not specified.
-
-Zero frequency represents DC voltage source.
+Alternatively, you can specify a standard SPICE source function, e.g.
+```text
+SIN(Voffset Vamplitude Freq Tdelay Theta Phi)
+PULSE(V1 V2 Tdelay Trise Tfall Pwidth Period)
+```
+Note for `PULSE` command: if a Period is not specified, the waveform will be non-periodic and contain a single ON pulse only.
 
 ### Independent Current Source
 ```text
-Ix = current [frequency [phase]]
+Ix = <current> [<frequency> [<phase>]] | <expression>
 ```
-Current (amperes) flows from terminal1 to terminal2.
-A negative value reverses direction.
+- Current (amperes) flows from terminal1 to terminal2.
+- A negative value reverses direction.
+- Frequency and phase are optional and will default to 0 if not specified.
+- Zero frequency and zero phase represents a DC current source.
 
-Frequency and phase are optional and will default to 0 if not specified.
+Alternatively, you can specify a SPICE source function.
 
-Zero frequency represents DC current source.
-
+Note that an *ideal open circuit* can be represented by:
 ```text
 Ix = 0
 ```
-is equivalent to an ideal *open circuit*.
 
-### Controlled Sources
-Controlled sources are defined by a gain value and a single reference branch.
+### Behavioral Sources
+Behavioral sources are used to specify arbitrary voltage or current functions.
+
+#### Behavioral Voltage Source
+```text
+Bx = <expression> V
+```
+
+#### Behavioral Current Source
+```text
+Bx = <expression> I
+```
+
+### Dependent Sources
+Dependent sources, a.k.a. *controlled sources*, are defined by a gain value and a single reference branch.
+- E and H are voltage sources, proportional to the reference branch voltage
+- G and F are current sources, proportional to the reference branch current
+- Due to SPICE implementation details, the reference branch for current-controlled sources F and H must be a voltage source (V or H element).
 
 #### Voltage-Controlled Voltage Source (VCVS)
 ```text
-Ex = gain <branch>
+Ex = <gain> <branch>
 ```
+The voltage gain is unitless.
 #### Voltage-Controlled Current Source (VCCS)
 ```text
-Gx = gain <branch>
+Gx = <gain> <branch>
 ```
+Gain units are amperes per volt.
 #### Current-Controlled Current Source (CCCS)
 ```text
-Fx = gain <source>
+Fx = <gain> <source>
 ```
-Due to the SPICE implementation, reference branch must be a V or H element.
-
+The current gain is unitless.
 #### Current-Controlled Voltage Source (CCVS)
 ```text
-Hx = gain <source>
+Hx = <gain> <source>
 ```
-Due to the SPICE implementation, reference branch must be a V or H element.
+Gain units are volts per ampere.
 
-## 7. Node Assignment
+## Node Assignment
 The compiler must:
-1. identify all wire-connected nodes,
-2. merge all nodes touching a ground symbol into node `0`,
-3. assign consecutive numbers to all remaining nodes.
-
-Node `0` is the global SPICE ground.
-
+1. Identify all wire-connected nodes.
+2. Merge all nodes touching a ground symbol into node `0` (the global SPICE ground).
+3. Associate user-defined labels with nodes (these replace numeric nodes).
+4. Assign consecutive numbered nodes `N001,N002,...` to all unlabelled nodes.

@@ -1,0 +1,7 @@
+*Underdamped RLC Series Circuit
+R1 in N001 10k
+C1 out 0 100p
+V1 in 0 PULSE(0 1 0 1u 1u 1)
+L1 N001 out 100m
+.tran 100u
+.end

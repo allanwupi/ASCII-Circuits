@@ -1,0 +1,26 @@
+Envelope Detector with Low-Pass Filter
+- Used to demodulate amplitude-modulated (AM) signals
+- Very cheap and easy to build
+[SCHEMATIC]
+                 +.amp    +.env         # detector has ripples
+                 |        |
+in.+---+    +-Ro-+-D1-+---+--R2--+.out  # LP filtered output
+   |   |    |         |   |      |
+   Bi  Ri   Eo        R1  C1     C2
+   |   |    |         |   |      |
+   =   =    =         =   =      =
+
+[VALUES]
+# Behavioral voltage source produces weak AM signal
+Bi = (1+0.5*sin(2*pi*1k*time))*sin(2*pi*20k*time) V
+Ri = 100k
+Eo = 8 Ri
+Ro = 75
+D1 = 0.7
+R1 = 10k
+C1 = 10n
+R2 = 10k
+C2 = 15n
+
+[COMMANDS]
+.tran 1n 4m 1m
