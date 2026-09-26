@@ -8,19 +8,22 @@ An example circuit in ASCDL:
 Envelope Detector
 
 [CIRCUIT]
-+--D1--+---+     +----+
-|      |   |     |    |
-V1     C1  R1    E1   R2
-|      |   |     |    |
-=      =   =     =    =
++---+    +--Ro--D1--+---+--R2--+
+|   |    |          |   |      |
+Vi  Ri   Eo         R1  C1     C2
+|   |    |          |   |      |
+=   =    =          =   =      =
 
 [VALUES]
-V1 = 0.5 20k
+Vi = 0.5 20k
+Ri = 100k
+Ro = 75
+Eo = 20 R0
 D1 = 0.7
-C1 = 100n
 R1 = 10k
-E1 = 20 R1
+C1 = 10n
 R2 = 10k
+C2 = 15n
 ```
 
 ## 1. File Structure
@@ -89,11 +92,10 @@ Note the maximum circuit size is capped by the number of branches:
 ## 4. Wires and Nodes
 Wires are orthogonal straight line segments. There are 3 wire characters:
 ```text
--
-|
-+
+-  Horizontal wire
+|  Vertical vire
++  Connection or corner
 ```
-These represent horizontal wires, vertical wires, and wire connections/corners respectively.
 
 Horizontal wires `-` and vertical wires `|` may only intersect at `+`. We do not support wires crossing over, hence only planar circuits are possible.
 
@@ -120,16 +122,14 @@ Vertical:
 |
 R1
 |
-+
-```
-Each terminal of a branch is a sequence of wires ending in a connection point:
-```text
-+
-```
-or ground:
-```text
+R2
+|
 =
 ```
+Each terminal of a branch must connect to:
+1. Another branch `Zx`
+2. A connection point or corner `+`
+3. Ground `=`
 
 ### Terminal Numbering
 Horizontal:
