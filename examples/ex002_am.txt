@@ -12,13 +12,13 @@ in.+---+    +-Ro-+-D1-+---+--R2--+.out  # LP filtered output
 
 [VALUES]
 # Behavioral voltage source produces weak AM signal
-Bi = (1+0.5*sin(2*pi*1k*time))*sin(2*pi*20k*time) V
+Bi = (1 + 0.5*sin(2*pi*1k*time)) * sin(2*pi*20k*time) V
 Ri = 100k
 Eo = 8 Ri
 Ro = 75
 D1 = 0.7
 R1 = 10k
-C1 = 10n
+C1 = 20n
 R2 = 10k
 C2 = 15n
 

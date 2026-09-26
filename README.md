@@ -1,12 +1,12 @@
 # ASCII-SPICE Circuit Description Language (ASCDL)
-ASCDL is a compact ASCII schematic language for specifying simple analog circuits. It compiles to standard SPICE netlist `.net` text files, which can be opened with the free [LTSpice](https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html) program.
+ASCDL is a compact ASCII schematic language for specifying simple analog circuits. It compiles to standard SPICE netlist `.net` text files, which can be opened with the free [LTspice](https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html) program.
 
 As a tentative future goal, we will attempt to build our own Python version of SPICE using [modified nodal analysis](https://en.wikipedia.org/wiki/Modified_nodal_analysis).
 
 ## 0. Examples
 ```text
 Underdamped RLC Series Circuit
-- Damping ratio = R/2 √(C/L) = 0.158
+- Damping ratio = R/2 sqrt(C/L) = 0.158
 
 [SCHEMATIC]
 in.+--R1--L1--+.out
@@ -41,13 +41,13 @@ in.+---+    +-Ro-+-D1-+---+--R2--+.out  # LP filtered output
 
 [VALUES]
 # Behavioral voltage source produces weak AM signal
-Bi = (1+0.5*sin(2*pi*1k*time))*sin(2*pi*20k*time) V
-Ri = 10k
+Bi = (1 + 0.5*sin(2*pi*1k*time)) * sin(2*pi*20k*time) V
+Ri = 100k
 Eo = 8 Ri
 Ro = 75
 D1 = 0.7
 R1 = 10k
-C1 = 10n
+C1 = 20n
 R2 = 10k
 C2 = 15n
 
@@ -97,7 +97,7 @@ At least 1 valid SPICE dot command for simulation should be included. If multipl
 .tran [Tstep] <Tstop> [Tstart [dTmax]]
 ```
 
-Refer to the [LTSpice wiki page on dot commands](https://ltwiki.org/LTspiceHelpXVII/LTspiceHelp/html/DotCommands.htm) for other commands.
+Refer to the [LTspice wiki page on dot commands](https://ltwiki.org/LTspiceHelpXVII/LTspiceHelp/html/DotCommands.htm) for other commands.
 
 ## Circuit Elements
 All circuit elements are two-terminal.
@@ -363,6 +363,8 @@ Ix = 0
 
 ### Behavioral Sources
 Behavioral sources are used to specify arbitrary voltage or current functions.
+
+For expression syntax, see the [LTspice wiki reference page on B sources](https://ltwiki.org/index.php?title=B_sources_(complete_reference)).
 
 #### Behavioral Voltage Source
 ```text
