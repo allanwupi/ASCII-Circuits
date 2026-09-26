@@ -1,7 +1,7 @@
 # ASCII-SPICE Circuit Description Language (ASCDL)
-ASCDL is a compact ASCII schematic language for specifying analog circuits. It compiles to standard SPICE netlist `.net` text files, which can be opened with the free [LTSpice](https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html) program.
+ASCDL is a compact ASCII schematic language for specifying simple analog circuits. It compiles to standard SPICE netlist `.net` text files, which can be opened with the free [LTSpice](https://www.analog.com/en/resources/design-tools-and-calculators/ltspice-simulator.html) program.
 
-As a tentative future goal, we will attempt to build our own Python program for SPICE using [modified nodal analysis](https://en.wikipedia.org/wiki/Modified_nodal_analysis).
+As a tentative future goal, we will attempt to build our own Python version of SPICE using [modified nodal analysis](https://en.wikipedia.org/wiki/Modified_nodal_analysis).
 
 ## 0. Examples
 ```text
@@ -102,7 +102,7 @@ Refer to the [LTSpice wiki page on dot commands](https://ltwiki.org/LTspiceHelpX
 ## Circuit Elements
 All circuit elements are two-terminal.
 
-**Passive Elements**
+**Passive elements**
 ```text
 R  Resistor
 L  Inductor
@@ -111,7 +111,7 @@ D  Diode
 ```
 Note that diodes are modeled as *piecewise linear*.
 
-**Active Elements**
+**Active elements**
 ```text
 V  Independent voltage source
 I  Independent current source
@@ -139,7 +139,7 @@ A *branch* is a circuit element, uniquely identified by a 2-character token.
 ```
 where:
 ```text
-Type ∈ {R,L,C,D,V,I,E,F,G,H}
+Type ∈ {R,L,C,D,V,I,B,E,F,G,H}
 ID ∈ {0..9,a..z}
 ```
 Examples:
@@ -150,7 +150,7 @@ Vz
 ```
 Note the maximum number of branches in a circuit:
 ```text
-10 types × 36 IDs = 360 branches
+11 types × 36 IDs = 396 branches
 ```
 
 ## Wires and Nodes
@@ -175,8 +175,9 @@ label.+
 - The label `0` is not permitted, as it is reserved for the *ground* node. Otherwise, any arbitrary-length combination is allowed.
 - No whitespaces are permitted.
 - The label must be on the same line as `+`.
+- Labels uniquely identify a node, that is, each node can have at most 1 label.
 
-Each node can have at most one label.
+Named nodes are required to specify *non-planar* graphs.
 
 ### Ground
 Ground is the special node `0` in SPICE. It is represented by:
