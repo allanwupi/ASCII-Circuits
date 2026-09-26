@@ -171,17 +171,20 @@ A node with a connection point `+` can be given a name (net label) by prefixing 
 label.+
 +.label
 ```
-Labels are arbitrary-length words containing any combination of lowercase or uppercase letters, digits `0..9` and underscores `_`. No whitespaces are permitted. The label must be on the same line as `+`.
+- Labels may contain lowercase or uppercase letters, digits `0..9` and underscores `_`.
+- The label `0` is not permitted, as it is reserved for the *ground* node. Otherwise, any arbitrary-length combination is allowed.
+- No whitespaces are permitted.
+- The label must be on the same line as `+`.
 
 Each node can have at most one label.
 
 ### Ground
-Ground is a special node, represented by a special symbol:
+Ground is the special node `0` in SPICE. It is represented by:
 ```text
 =
 ```
 
-Each disconnected network in [SCHEMATIC] must contain a connection to `=` ground node, i.e. there should be an electrical path to ground.
+Each disconnected network in [SCHEMATIC] must contain at least 1 connection to the ground node symbol `=`, i.e. there should be an electrical path to ground.
 
 All occurrences of `=` represent the same global ground node in SPICE.
 
