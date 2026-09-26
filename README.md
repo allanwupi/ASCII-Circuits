@@ -6,13 +6,17 @@ Initially we support steady-state analysis only (DC and AC). Transient analysis 
 An example circuit in ASCDL:
 ```text
 Envelope Detector
+* Used to demodulate amplitude-modulated (AM) signals
+* Very cheap and easy to build
 
 [CIRCUIT]
-+---+    +--Ro--D1--+---+--R2--+
-|   |    |          |   |      |
-Vi  Ri   Eo         R1  C1     C2
-|   |    |          |   |      |
-=   =    =          =   =      =
+                           +.RX
+                           |
+in.+---+    +--Ro--D1--+---+--R2--+.out
+   |   |    |          |   |      |
+   Vi  Ri   Eo         R1  C1     C2
+   |   |    |          |   |      |
+   =   =    =          =   =      =
 
 [VALUES]
 Vi = 0.5 20k
@@ -28,6 +32,7 @@ C2 = 15n
 
 ## 1. File Structure
 ```text
+<optional title>
 <optional comments>
 
 [CIRCUIT]
@@ -37,9 +42,17 @@ C2 = 15n
 <branch values>
 ```
 
-The schematic is treated as a rectangular grid of ASCII characters. Missing characters at the end of a line are treated as spaces. Tabs are not allowed.
+The first line of the file is treated as the title (optional). If no title is given, the default name is the current date/time `YYYYMMDD_HHMMSSS`.
 
-Any lines of text before [CIRCUIT] are ignored, and can be used for comments or metadata. Any blank lines in the file are also ignored.
+Lines of text after the title and before [CIRCUIT] are ignored, and can be used for comments or metadata.
+
+Any blank lines in the file are also ignored.
+
+### Circuit Schematic
+
+The circuit schematic is a rectangular grid of ASCII characters which represent wires and circuit elements. Missing characters at the end of a line are treated as spaces.
+
+Tabs are not allowed in the schematic, only spaces.
 
 ## 2. Circuit Elements
 All circuit elements are two-terminal.
@@ -100,6 +113,16 @@ Wires are orthogonal straight line segments. There are 3 wire characters:
 Horizontal wires `-` and vertical wires `|` may only intersect at `+`. We do not support wires crossing over, hence only planar circuits are possible.
 
 A *node* is a connected network of wire characters.
+
+### Node Labels
+A node with a connection point `+` can be given a label by prefixing or suffixing with `.`:
+```text
+label.+
++.label
+```
+Labels are arbitrary-length words containing any combination of lowercase letters, uppercase letters or digits.
+
+The label must be on the same line as `+`. Each node can have at most one label.
 
 ### Ground
 Ground is a special node, represented by a special symbol:
