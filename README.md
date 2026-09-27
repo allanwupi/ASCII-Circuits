@@ -3,28 +3,7 @@ ASCDL is a compact ASCII schematic language for specifying simple analog circuit
 
 As a tentative future goal, we will attempt to build our own Python version of SPICE using [modified nodal analysis](https://en.wikipedia.org/wiki/Modified_nodal_analysis).
 
-## 0. Examples
-```text
-Underdamped RLC Series Circuit
-- Damping ratio = R/2 sqrt(C/L) = 0.158
-
-[SCHEMATIC]
-in.+--R1--L1--+.out
-   |          |
-   V1         C1
-   |          |
-   =          =
-
-[VALUES]
-V1 = PULSE(0 1 0 1u 1u 1)
-R1 = 10k
-L1 = 100m
-C1 = 100p
-
-[COMMANDS]
-.tran 100u
-```
-
+## Example
 ```text
 Envelope Detector with Low-Pass Filter 
 - Used to demodulate amplitude-modulated (AM) signals
@@ -54,6 +33,8 @@ C2 = 15n
 [COMMANDS]
 .tran 1n 4m 1m
 ```
+
+See the `examples/` folder for more examples of ASCDL files and their associated netlists.
 
 ## Overview
 ### File Structure
@@ -100,14 +81,13 @@ At least 1 valid SPICE dot command for simulation should be included. If multipl
 Refer to the [LTspice wiki page on dot commands](https://ltwiki.org/LTspiceHelpXVII/LTspiceHelp/html/DotCommands.htm) for other commands.
 
 ## Circuit Elements
-All circuit elements are two-terminal.
-
 **Passive elements**
 ```text
 R  Resistor
 L  Inductor
 C  Capacitor
 D  Diode
+K  Mutual inductance 
 ```
 Note that diodes are modeled as *piecewise linear*.
 
@@ -122,6 +102,8 @@ G  Voltage-controlled current source
 H  Current-controlled voltage source
 ```
 
+All circuit elements are two-terminal, with the exception of mutual inductance K.
+
 By default, independent sources are sinusoidal:
 ```text
 V(t) = Magnitude cos(2 pi Frequency Time + pi Phase/180)
@@ -133,13 +115,13 @@ cos(t) = sin(t-90°)
 ```
 
 ## Branch Names
-A *branch* is a circuit element, uniquely identified by a 2-character token.
+A *branch* is a circuit element. Each branch is uniquely identified by a 2-character token in the circuit schematic.
 ```text
 <Type><ID>
 ```
 where:
 ```text
-Type ∈ {R,L,C,D,V,I,B,E,F,G,H}
+Type ∈ {R,L,C,D,K,V,I,B,E,F,G,H}
 ID ∈ {0..9,a..z}
 ```
 Examples:
@@ -148,7 +130,8 @@ R1
 Ca
 Vz
 ```
-Note the maximum number of branches in a circuit:
+
+Note the maximum number of branches in a circuit (excluding K-elements):
 ```text
 11 types × 36 IDs = 396 branches
 ```
@@ -208,6 +191,8 @@ Each terminal of a branch must connect to:
 1. Another branch e.g. `Rx`
 2. A connection point or corner `+`
 3. Ground `=`
+
+Note that [Mutual Inductance](#-mutual-inductance) is a special case that should not be connected.
 
 ### Terminal Labels
 Horizontal branch:
@@ -276,25 +261,47 @@ Note that the parser will find the longest-match to differentiate `m / meg`.
 
 Metric prefixes cannot be combined with scientific notation.
 
-### Resistor
+### Parameter Values
+User variables for numeric values can be defined using the following syntax.
+```text
+component = {<parameter>}
+.<parameter> = <value>
+```
+
+Example:
+```text
+L1 = {L_low}
+L2 = {L_high}
+L3 = {L_high}
+L4 = {L_low}
+.L_low = 10
+.L_high = 2500
+```
+
+Parameter names follow the same rules as node labels (see [Named Nodes](#-named-nodes)).
+
+All parameters defined in the file get compiled to individual `.param <name>=<value>` SPICE commands.
+
+### Passive Elements
+#### Resistor
 ```text
 Rx = <resistance>
 ```
 Resistance (ohms) must be positive.
 
-### Inductor
+#### Inductor
 ```text
 Lx = <inductance>
 ```
 Inductance (henries) must be positive.
 
-### Capacitor
+#### Capacitor
 ```text
 Cx = <capacitance>
 ```
 Capacitance (farads) must be positive.
 
-### Diode
+#### Diode
 ```text
 Dx = <Von>
 ```
@@ -329,7 +336,46 @@ D1 = -0.7
 ```
 conducts from negative to positive.
 
-### Independent Voltage Source
+#### Mutual Inductance
+```
+Kx = L1 L2 [L3 ...] [<coefficient>]
+```
+Mutual inductance is a special element used to model *transformers*.
+- Two or more inductors (transformer windings) may be listed in a single statement to be coupled together.
+- The mutual coupling coefficient K must range between -1 and 1
+- Unity coupling represents an *ideal transformer* with no leakage inductance.
+- If the coefficient is not specified, it defaults to 1.
+- A negative coupling value reverses the polarity of the transformer.
+
+Each mutual inductance Kx must be labelled somewhere in the schematic, but it should *not* be connected to any network. It does not need to be placed next to the component inductors, but this is recommended for ease of reading.
+```text
++     +
+|     |
+La Kx Lb
+|     |
+=     =
+```
+
+Note that *turns ratio* is determined by the inductance ratio of the individual windings:
+```text
+Lprimary / Lsecondary = (Nprimary / Nsecondary)^2
+```
+
+For example:
+```text
+L1 = 10
+L2 = 160
+K1 = L1 L2
+```
+Models a transformer of turns ratio 1:4 (with default coupling of 1).
+
+Additionally, note that the mutual inductance M for a two-winding transformer is related to K by:
+```text
+M = K sqrt(L1 L2)
+```
+
+### Active Elements
+#### Independent Voltage Source
 ```text
 Vx = <voltage> [<frequency> [<phase>]] | <expression>
 ```
@@ -345,7 +391,7 @@ PULSE(V1 V2 Tdelay Trise Tfall Pwidth Period)
 ```
 Note for `PULSE` command: if a Period is not specified, the waveform will be non-periodic and contain a single ON pulse only.
 
-### Independent Current Source
+#### Independent Current Source
 ```text
 Ix = <current> [<frequency> [<phase>]] | <expression>
 ```
@@ -361,44 +407,44 @@ Note that an *ideal open circuit* can be represented by:
 Ix = 0
 ```
 
-### Behavioral Sources
+#### Behavioral Sources
 Behavioral sources are used to specify arbitrary voltage or current functions.
 
 For expression syntax, see the [LTspice wiki reference page on B sources](https://ltwiki.org/index.php?title=B_sources_(complete_reference)).
 
-#### Behavioral Voltage Source
+##### Behavioral Voltage Source
 ```text
 Bx = <expression> V
 ```
 
-#### Behavioral Current Source
+##### Behavioral Current Source
 ```text
 Bx = <expression> I
 ```
 
-### Dependent Sources
+#### Dependent Sources
 Dependent sources, a.k.a. *controlled sources*, are defined by a gain value and a single reference branch.
 - E and H are voltage sources, proportional to the reference branch voltage
 - G and F are current sources, proportional to the reference branch current
 - Due to SPICE implementation details, the reference branch for current-controlled sources F and H must be a voltage source (V or H element).
 - The same direction conventions apply as for independent sources.
 
-#### Voltage-Controlled Voltage Source (VCVS)
+##### Voltage-Controlled Voltage Source (VCVS)
 ```text
 Ex = <gain> <branch>
 ```
 The voltage gain is unitless.
-#### Voltage-Controlled Current Source (VCCS)
+##### Voltage-Controlled Current Source (VCCS)
 ```text
 Gx = <gain> <branch>
 ```
 Gain units are amperes per volt.
-#### Current-Controlled Current Source (CCCS)
+##### Current-Controlled Current Source (CCCS)
 ```text
 Fx = <gain> <source>
 ```
 The current gain is unitless.
-#### Current-Controlled Voltage Source (CCVS)
+##### Current-Controlled Voltage Source (CCVS)
 ```text
 Hx = <gain> <source>
 ```

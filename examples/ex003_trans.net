@@ -1,0 +1,24 @@
+* Simple Power Transmission with Transformers
+L1 N001 0 {Llow}
+L2 sender 0 {Lhigh}
+Rg N001 gen {Rgen}
+Vg gen 0 SINE(0 120 60)
+Rl sender N002 {Rline}
+Ll N002 receiver {Lline}
+L3 receiver 0 {Lhigh}
+L4 out2 0 {Llow}
+Ro out2 0 {Rload}
+Rs gen N003 {Rgen}
+Rh out1 0 {Rload}
+Rm N003 N004 {Rline}
+Lm N004 out1 {Lline}
+K1 L1 L2 1
+K2 L3 L4 1
+.param Rgen=50
+.param Rline=2
+.param Lline=7
+.param Rload=1k
+.param Llow=10
+.param Lhigh=2.5k
+.tran 0 200m .startup
+.end

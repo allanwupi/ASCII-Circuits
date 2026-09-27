@@ -10,6 +10,6 @@ C2 out 0 15n
 R2 env out 10k
 Ri N001 0 100k
 Ro amp N002 75
-.tran 1n 4m 1m
 .model D1 D(Vfwd=0.7)
+.tran 1n 4m 1m
 .end

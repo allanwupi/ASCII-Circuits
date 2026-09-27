@@ -1,0 +1,44 @@
+* Simple Power Transmission with Transformers
+
+[SCHEMATIC]
+gen.+--Rs--Rl--Ll--+.out1
+    |              |
+    Vs             Rh
+    |              |
+    =              =
+          sender.+          +.receiver
+                 |          |
+gen.+--Rg--+     +--Rt--Lt--+     +---+.out2
+           |     |          |     |   |
+           L1 K1 L2         L3 K2 L4  Ro
+           |     |          |     |   |
+           =     =          =     =   =
+
+[VALUES]
+Vs = 120 60
+K1 = L1 L2
+K2 = L3 L4
+
+.Rgen = 50
+.Rline = 2
+.Lline = 7
+.Rload = 1k
+.Llow = 10
+.Lhigh = 2.5k
+
+Rs = {Rgen}
+Rl = {Rline}
+Ll = {Lline}
+Rh = {Rload}
+
+Rg = {Rgen}
+Rt = {Rline}
+Lt = {Lline}
+L1 = {Llow}
+L2 = {Lhigh}
+L3 = {Lhigh}
+L4 = {Llow}
+Ro = {Rload}
+
+[COMMANDS]
+.tran 0 200m .startup
