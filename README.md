@@ -114,9 +114,8 @@ V(t) = Magnitude sin(2 pi Frequency Time + pi Phase/180)
 A *branch* is a circuit element, connected to exactly two nodes (with the exception of mutual inductance K).
 
 Each branch has a unique identifying token in the circuit schematic, consisting of alphanumeric characters and/or underscores.
-- The first character of the branch token must be a *capital letter* matching one of the defined circuit elements.
-- A suffix is optional if there is only a single branch of that type, otherwise suffixes are necessary to distinguish multiple branches of the same type.
-- The suffix is *case-insensitive*, same as SPICE.
+- The first character of the branch token must be a *capital/uppercase letter* matching one of the defined circuit elements.
+- A suffix is optional if there is only a single branch of that type, otherwise suffixes are necessary to distinguish multiple branches of the same type. Only *lowercase* letters are allowed in the suffix.
 
 Syntax:
 ```text
@@ -125,7 +124,7 @@ Syntax:
 where:
 ```text
 Type ∈ {R,L,C,D,K,V,I,B,E,F,G,H}
-Suffix = {_,0..9,a..z,A..Z}*
+Suffix = {_,0..9,a..z}*
 ```
 
 Examples:
@@ -156,8 +155,8 @@ label.+
 +.label
 ```
 - The label `0` is not permitted, as it is reserved for the *ground* node.
-- Labels of the form `Nxxx` where `xxx` is a string of digits (e.g. N004) are not permitted, as they are reserved as default names for unlabelled nodes.
-- Otherwise, any non-empty string of alphanumeric characters `0..9,a..z,A..Z` and underscores `_` is allowed.
+- Labels of the form `nxxx` where `xxx` is a string of digits (e.g. n004) are not permitted, as these collide with the default names for unlabelled nodes.
+- Otherwise, any non-empty string of numeric digits `0..9`, *lowercase* letters `a..z` and underscores `_` is allowed.
 - No whitespaces are permitted.
 - The label must be on the same line as `+`.
 - Labels uniquely identify a node, that is, each node can have at most 1 label.
@@ -189,9 +188,9 @@ R2
 |
 =
 ```
-Each terminal of a branch must connect to:
-1. Another branch e.g. `Rx`
-2. A connection point or corner `+`
+Each terminal of a branch must connect, via at least 1 horizontal/vertical wire, to:
+1. Another branch e.g. `Rx`, or
+2. A connection point or corner `+`, or
 3. Ground `=`
 
 Note that [Mutual Inductance](#-mutual-inductance) is a special case; Kx elements do not have terminals and should be isolated from all other components.
