@@ -52,6 +52,7 @@ See the `examples/` folder for more examples of ASCDL files and their associated
 - Any blank lines in the file are ignored.
 - Inline and single-line comments can be added in the [SCHEMATIC], [VALUES] and [COMMANDS] sections using `#`.
 - Multi-line comments are not supported.
+- Unlike SPICE netlists, ASCDL is *case-sensitive.*
 
 ### Schematic
 
@@ -67,21 +68,21 @@ All components in the circuit schematic must be assigned values. See the [Branch
 
 At least 1 valid SPICE dot command for simulation should be included. If multiple commands are provided, a separate netlist file will be generated for each command.
 
-**DC operating point**
+**DC Operating Point**
 ```
 .op
 ```
 
-**Transient analysis**
+**Transient Analysis**
 ```
 .tran <Tstop>
-.tran [Tstep] <Tstop> [Tstart [dTmax]]
+.tran [Tstep] <Tstop> [Tstart [dTmax]] 
 ```
 
 Refer to the [LTspice wiki page on dot commands](https://ltwiki.org/LTspiceHelpXVII/LTspiceHelp/html/DotCommands.htm) for other commands.
 
-## Circuit Elements
-**Passive elements**
+## Circuit Elements and Branches
+**Passive Elements**
 ```text
 R  Resistor
 L  Inductor
@@ -91,7 +92,7 @@ K  Mutual inductance
 ```
 Note that diodes are modeled as *piecewise linear*.
 
-**Active elements**
+**Active Elements**
 ```text
 V  Independent voltage source
 I  Independent current source
@@ -109,26 +110,31 @@ By default, independent sources are sinusoidal:
 V(t) = Magnitude sin(2 pi Frequency Time + pi Phase/180)
 ```
 
-## Branch Names
-A *branch* is a circuit element. Each branch is uniquely identified by a 2-character token in the circuit schematic.
+### Branches
+A *branch* is a circuit element, connected to exactly two nodes (with the exception of mutual inductance K).
+
+Each branch has a unique identifying token in the circuit schematic, consisting of alphanumeric characters and/or underscores.
+- The first character of the branch token must be a *capital letter* matching one of the defined circuit elements.
+- A suffix is optional if there is only a single branch of that type, otherwise suffixes are necessary to distinguish multiple branches of the same type.
+- The suffix is *case-insensitive*, same as SPICE.
+
+Syntax:
 ```text
-<Type><ID>
+<Type>[Suffix]
 ```
 where:
 ```text
 Type ∈ {R,L,C,D,K,V,I,B,E,F,G,H}
-ID ∈ {0..9,a..z}
-```
-Examples:
-```text
-R1
-Ca
-Vz
+Suffix = {_,0..9,a..z,A..Z}*
 ```
 
-Note the maximum number of branches in a circuit (excluding K-elements):
+Examples:
 ```text
-11 types × 36 IDs = 396 branches
+D
+R1
+R_load
+Vgs
+Cout2
 ```
 
 ## Wires and Nodes
@@ -149,8 +155,9 @@ A node with a connection point `+` can be given a name (net label) by prefixing 
 label.+
 +.label
 ```
-- Labels may contain lowercase or uppercase letters, digits `0..9` and underscores `_`.
-- The label `0` is not permitted, as it is reserved for the *ground* node. Otherwise, any arbitrary-length combination is allowed.
+- The label `0` is not permitted, as it is reserved for the *ground* node.
+- Labels of the form `Nxxx` where `xxx` is a string of digits (e.g. N004) are not permitted, as they are reserved as default names for unlabelled nodes.
+- Otherwise, any non-empty string of alphanumeric characters `0..9,a..z,A..Z` and underscores `_` is allowed.
 - No whitespaces are permitted.
 - The label must be on the same line as `+`.
 - Labels uniquely identify a node, that is, each node can have at most 1 label.
@@ -240,7 +247,7 @@ The *suffix* can be scientific notation (exponential form). Examples:
 1.37e-11
 ```
 
-Alternatively, a value can end in one of the *metric prefix* abbreviations (case-insensitive):
+Alternatively, a value can end in one of the *metric prefix* characters:
 ```text
 f = 1e-15
 p = 1e-12
@@ -248,11 +255,11 @@ n = 1e-9
 u = 1e-6
 m = 1e-3
 k = 1e3
-Meg = 1e6
+M = 1e6
 G = 1e9
 T = 1e12
 ```
-Note that the parser will find the longest-match to differentiate `m / meg`.
+Note that unlike SPICE, metric prefixes are case-sensitive: 'm' and 'M' mean different things.
 
 Metric prefixes cannot be combined with scientific notation.
 

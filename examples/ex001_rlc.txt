@@ -1,17 +1,17 @@
 Underdamped RLC Series Circuit
 - Damping ratio = R/2 sqrt(C/L) = 0.158
 [SCHEMATIC]
-in.+--R1--L1--+.out
-   |          |
-   V1         C1
-   |          |
-   =          =
+in.+--R--L--+.out
+   |        |
+   V        C
+   |        |
+   =        =
 
 [VALUES]
-V1 = PULSE(0 1 0 1u 1u 1)
-R1 = 10k
-L1 = 100m
-C1 = 100p
+V = PULSE(0 1 0 1u 1u 1)
+R = 10k
+L = 100m
+C = 100p
 
 [COMMANDS]
 .tran 100u
