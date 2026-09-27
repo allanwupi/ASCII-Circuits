@@ -106,12 +106,7 @@ All circuit elements are two-terminal, with the exception of mutual inductance K
 
 By default, independent sources are sinusoidal:
 ```text
-V(t) = Magnitude cos(2 pi Frequency Time + pi Phase/180)
-```
-
-Note that we use a cosine function. This is related to sine by
-```
-cos(t) = sin(t-90°)
+V(t) = Magnitude sin(2 pi Frequency Time + pi Phase/180)
 ```
 
 ## Branch Names
