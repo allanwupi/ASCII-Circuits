@@ -192,7 +192,7 @@ Each terminal of a branch must connect to:
 2. A connection point or corner `+`
 3. Ground `=`
 
-Note that [Mutual Inductance](#-mutual-inductance) is a special case that should not be connected.
+Note that [Mutual Inductance](#-mutual-inductance) is a special case; Kx elements do not have terminals and should be isolated from all other components.
 
 ### Terminal Labels
 Horizontal branch:
@@ -347,7 +347,7 @@ Mutual inductance is a special element used to model *transformers*.
 - If the coefficient is not specified, it defaults to 1.
 - A negative coupling value reverses the polarity of the transformer.
 
-Each mutual inductance Kx must be labelled somewhere in the schematic, but it should *not* be connected to any network. It does not need to be placed next to the component inductors, but this is recommended for ease of reading.
+Each mutual inductance Kx must be labelled somewhere in the schematic, but it should be completely isolated and *not* connected to any network. The token does not need to be placed next to the component inductors, but this is recommended for ease of reading.
 ```text
 +     +
 |     |
