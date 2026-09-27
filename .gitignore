@@ -1,3 +1,4 @@
 *.raw
 *.log
 *.plt
+__pycache__/
