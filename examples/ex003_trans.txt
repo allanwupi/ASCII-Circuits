@@ -41,4 +41,5 @@ L4 = {Llow}
 Ro = {Rload}
 
 [COMMANDS]
-.tran 0 200m .startup
+.tran 0 200m
+.end

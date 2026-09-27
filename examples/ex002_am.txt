@@ -24,3 +24,4 @@ C2 = 15n
 
 [COMMANDS]
 .tran 1n 4m 1m
+.end

@@ -32,6 +32,7 @@ C2 = 15n
 
 [COMMANDS]
 .tran 1n 4m 1m
+.end
 ```
 
 See the `examples/` folder for more examples of ASCDL files and their associated netlists.
@@ -46,6 +47,7 @@ See the `examples/` folder for more examples of ASCDL files and their associated
 <branch values>
 [COMMANDS]
 <SPICE dot commands>
+.end
 ```
 
 - Lines before [SCHEMATIC] can be used for a title, descriptions or metadata. They will be directly translated into comments at the top of the netlist file, prefixed with `*`.
@@ -53,6 +55,7 @@ See the `examples/` folder for more examples of ASCDL files and their associated
 - Inline and single-line comments can be added in the [SCHEMATIC], [VALUES] and [COMMANDS] sections using `#`.
 - Multi-line comments are not supported.
 - Unlike SPICE netlists, ASCDL is *case-sensitive.*
+- The file must end in the line `.end`.
 
 ### Schematic
 
@@ -66,7 +69,7 @@ All components in the circuit schematic must be assigned values. See the [Branch
 
 ### Commands
 
-At least 1 valid SPICE dot command for simulation should be included. If multiple commands are provided, a separate netlist file will be generated for each command.
+At least 1 valid SPICE dot command for simulation should be included (not the ending line). If multiple commands are provided, a separate netlist file will be generated for each command.
 
 **DC Operating Point**
 ```

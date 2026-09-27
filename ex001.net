@@ -1,0 +1,8 @@
+*Underdamped RLC Series Circuit
+*- Damping ratio = R/2 sqrt(C/L) = 0.158
+R in n001 10k
+L n001 out 100m
+V in 0 PULSE(0 1 0 1u 1u 1)
+C out 0 100p
+.tran 100u
+.end

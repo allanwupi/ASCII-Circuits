@@ -3,7 +3,7 @@ Underdamped RLC Series Circuit
 [SCHEMATIC]
 in.+--R--L--+.out
    |        |
-   V        C
+   V        C # capacitor
    |        |
    =        =
 
@@ -15,3 +15,4 @@ C = 100p
 
 [COMMANDS]
 .tran 100u
+.end

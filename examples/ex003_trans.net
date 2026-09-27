@@ -20,5 +20,5 @@ Rm N003 N004 {Rline}
 Lm N004 out1 {Lline}
 K1 L1 L2 1
 K2 L3 L4 1
-.tran 0 200m .startup
+.tran 0 200m
 .end
