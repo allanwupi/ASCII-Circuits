@@ -1,15 +1,15 @@
 *Envelope Detector with Low-Pass Filter
 *- Used to demodulate amplitude-modulated (AM) signals
 *- Very cheap and easy to build
+Ro N001 amp 75
+D1 amp env D1
+R2 env out 10k
+Bi in 0 V=(1+0.5*sin(2*pi*1k*time))*sin(2*pi*20k*time)
+Ri in 0 100k
+Eo N001 0 in 0 8
 R1 env 0 10k
 C1 env 0 20n
-Eo N002 0 N001 0 8
-Bi N001 0 V = (1 + 0.5*sin(2*pi*1k*time)) * sin(2*pi*20k*time)
-D1 amp env D1
 C2 out 0 15n
-R2 env out 10k
-Ri N001 0 100k
-Ro amp N002 75
 .model D1 D(Vfwd=0.7)
 .tran 1n 4m 1m
 .end
