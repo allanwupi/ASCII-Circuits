@@ -1,9 +1,10 @@
 Underdamped RLC Series Circuit
 - Damping ratio = R/2 sqrt(C/L) = 0.158
+
 [SCHEMATIC]
 in.+--R--L--+.out
    |        |
-   V        C # capacitor
+   V        C
    |        |
    =        =
 

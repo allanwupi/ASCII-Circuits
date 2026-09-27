@@ -3,7 +3,7 @@ ASCDL is a compact ASCII schematic language for specifying simple analog circuit
 
 As a tentative future goal, we will attempt to build our own Python version of SPICE using [modified nodal analysis](https://en.wikipedia.org/wiki/Modified_nodal_analysis).
 
-## Example
+## Examples
 ```text
 Envelope Detector with Low-Pass Filter 
 - Used to demodulate amplitude-modulated (AM) signals

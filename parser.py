@@ -1,13 +1,47 @@
+# ASCII-Circuits Parser (WIP)
+# Author: Allan Wu
+# Date: 27 September 2026
+
 import logging
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 logging.disable(logging.INFO)
 import re
 from collections import deque
 
+
 BRANCH_SYMBOLS = {'R','L','C','D','K','V','I','B','E','F','G','H'}
 WIRE_SYMBOLS = {'+','-','|','=', '.'}
 GROUND_SYMBOL = '='
 LABEL_SYMBOL = '.'
+
+
+def parse_branch_terminals(schematic: list[str], rows: int, cols: int):
+    _branch_terminals: dict[str, tuple[tuple[int, int], tuple[int, int]]] = {}
+    NET_LABEL_RE = re.compile(
+        r"(?<![A-Za-z0-9_.])"
+        r"(?:\.[A-Za-z0-9_]+|[A-Za-z0-9_]+\.)"
+        r"(?![A-Za-z0-9_.])"
+    )
+    HORIZONTAL_BRANCH_RE = re.compile(
+        r"-(?P<branch>[A-Z][a-z0-9]*)-"
+    )
+    VERTICAL_BRANCH_RE = re.compile(
+        r"(?<!\S)(?P<branch>[A-Z][a-z0-9_]*)(?!\S)"
+    )   
+    for row, line in enumerate(schematic):
+        for match in NET_LABEL_RE.finditer(line):
+            label = match.group()
+            period_index = match.start() if label.startswith(".") else match.end() - 1
+            _node_names[(row, period_index)] = label.replace('.','')
+        for match in HORIZONTAL_BRANCH_RE.finditer(line):
+            branch = match.group("branch")
+            _branch_terminals[branch] = ((row, match.start()), (row, match.end()-1))
+        for match in VERTICAL_BRANCH_RE.finditer(line):
+            branch = match.group("branch")
+            col = match.start("branch")
+            if (row > 0 and row+1 < rows and schematic[row-1][col] == '|' and schematic[row+1][col] == '|') or (branch[0] == 'K'):
+                _branch_terminals[branch] = ((row-1, col), (row+1, col))
+    return _branch_terminals
 
 
 def merge_nodes(schematic: list[str], _node_names: dict[tuple[int, int], str], rows: int, cols: int):
@@ -66,14 +100,58 @@ def merge_nodes(schematic: list[str], _node_names: dict[tuple[int, int], str], r
                 unlabelled_node_idx += 1
             node_idx += 1
             nodes.append([])
+    return _node_names
+
+
+def parse_branch_values(tokens: list[str]):
+    #TODO - actual logic for branches
+    branch_id = tokens[0]
+    branch_symbol = branch_id[0]
+    branch_values = tokens[2:]
+    if branch_symbol == '.':
+        commands.append(f'.param {branch_id[1:]}={branch_values[-1]}')
+        return None
+    if branch_symbol not in BRANCH_SYMBOLS:
+        raise ValueError(f"Invalid branch symbol at line {line_number}: {branch_symbol}")
+    if branch_symbol == 'V' or branch_symbol == 'I':
+        if len(branch_values) == 3:
+            formatted_values = f'SIN(0 {branch_values[0]} {branch_values[1]} {branch_values[2]} 0 {branch_values[3]})'
+        if len(branch_values) == 2:
+            formatted_values = f'SIN(0 {branch_values[0]} {branch_values[1]})'
+        elif len(branch_values) == 1:
+            formatted_values = f'DC {branch_values[0]}'
+        else:
+            formatted_values = ' '.join(branch_values)
+    elif branch_symbol == 'B':
+        if branch_values[-1][-1] == 'V':
+            formatted_values = 'V=' + ''.join(branch_values[:-1])
+        elif branch_values[-1][-1] == 'I':
+            formatted_values = 'I=' + ''.join(branch_values[:-1])
+        else:
+            raise ValueError(f"Invalid behavioral source definition at line {line_number}: {branch_values[-1][-1]}")
+    elif branch_symbol == 'E': # e.g. E 8 R
+        ref = branch_values[-1]
+        formatted_values = f'{_node_names[_branch_terminals[ref][0]]} {_node_names[_branch_terminals[ref][1]]} {branch_values[0]}'
+    elif branch_symbol == 'D':
+        formatted_values = branch_id
+        commands.append(f'.model {branch_id} D(Vfwd={branch_values[-1]})')
+    elif branch_symbol == 'K':
+        if branch_values[-1].isnumeric():
+            commands.append(f'{branch_id} {' '.join(tokens[2:])}')
+        else:
+            commands.append(f'{branch_id} {' '.join(tokens[2:])} 1')
+        return None
+    else:
+        formatted_values = ' '.join(tokens[2:])
+    return formatted_values
 
 
 comments: list[str] = []
 schematic: list[str] = []
 commands: list[str] = []
 
-_node_names: dict[tuple[int, int], str] = {}
 _branch_terminals: dict[str, tuple[tuple[int, int], tuple[int, int]]] = {}
+_node_names: dict[tuple[int, int], str] = {}
 _value_defs: dict[str, str] = {}
 
 section_idx = 0
@@ -99,31 +177,8 @@ while True:
         for i, line in enumerate(schematic):
             if len(line) < cols:
                 schematic[i] += ' ' * (cols-len(line))
-        NET_LABEL_RE = re.compile(
-            r"(?<![A-Za-z0-9_.])"
-            r"(?:\.[A-Za-z0-9_]+|[A-Za-z0-9_]+\.)"
-            r"(?![A-Za-z0-9_.])"
-        )
-        HORIZONTAL_BRANCH_RE = re.compile(
-            r"-(?P<branch>[A-Z][a-z0-9]*)-"
-        )
-        VERTICAL_BRANCH_RE = re.compile(
-            r"(?<!\S)(?P<branch>[A-Z][a-z0-9_]*)(?!\S)"
-        )   
-        for row, line in enumerate(schematic):
-            for match in NET_LABEL_RE.finditer(line):
-                label = match.group()
-                period_index = match.start() if label.startswith(".") else match.end() - 1
-                _node_names[(row, period_index)] = label.replace('.','')
-            for match in HORIZONTAL_BRANCH_RE.finditer(line):
-                branch = match.group("branch")
-                _branch_terminals[branch] = ((row, match.start()), (row, match.end()-1))
-            for match in VERTICAL_BRANCH_RE.finditer(line):
-                branch = match.group("branch")
-                col = match.start("branch")
-                if (row > 0 and row+1 < rows and schematic[row-1][col] == '|' and schematic[row+1][col] == '|') or (branch[0] == 'K'):
-                    _branch_terminals[branch] = ((row-1, col), (row+1, col))
-        merge_nodes(schematic, _node_names=_node_names, rows=rows, cols=cols)
+        _branch_terminals = parse_branch_terminals(schematic, rows, cols)
+        _node_names = merge_nodes(schematic, _node_names=_node_names, rows=rows, cols=cols)
         continue
     elif cleanline == '[COMMANDS]' and section_idx == 2:
         section_idx = 3
@@ -137,45 +192,9 @@ while True:
             schematic.append(cleanline)
         case 2:
             tokens = cleanline.split()
-            #TODO - actual logic for branches
-            branch_id = tokens[0]
-            branch_symbol = branch_id[0]
-            branch_values = tokens[2:]
-            if branch_symbol == '.':
-                commands.append(f'.param {branch_id[1:]}={branch_values[-1]}')
+            formatted_values = parse_branch_values(tokens)
+            if formatted_values is None:
                 continue
-            if branch_symbol not in BRANCH_SYMBOLS:
-                raise ValueError(f"Invalid branch symbol at line {line_number}: {branch_symbol}")
-            if branch_symbol == 'V' or branch_symbol == 'I':
-                if len(branch_values) == 3:
-                    formatted_values = f'SIN(0 {branch_values[0]} {branch_values[1]} {branch_values[2]} 0 {branch_values[3]})'
-                if len(branch_values) == 2:
-                    formatted_values = f'SIN(0 {branch_values[0]} {branch_values[1]})'
-                elif len(branch_values) == 1:
-                    formatted_values = f'DC {branch_values[0]}'
-                else:
-                    formatted_values = ' '.join(branch_values)
-            elif branch_symbol == 'B':
-                if branch_values[-1][-1] == 'V':
-                    formatted_values = 'V=' + ''.join(branch_values[:-1])
-                elif branch_values[-1][-1] == 'I':
-                    formatted_values = 'I=' + ''.join(branch_values[:-1])
-                else:
-                    raise ValueError(f"Invalid behavioral source definition at line {line_number}: {branch_values[-1][-1]}")
-            elif branch_symbol == 'E': # e.g. E 8 R
-                ref = branch_values[-1]
-                formatted_values = f'{_node_names[_branch_terminals[ref][0]]} {_node_names[_branch_terminals[ref][1]]} {branch_values[0]}'
-            elif branch_symbol == 'D':
-                formatted_values = branch_id
-                commands.append(f'.model {branch_id} D(Vfwd={branch_values[-1]})')
-            elif branch_symbol == 'K':
-                if branch_values[-1].isnumeric():
-                    commands.append(f'{branch_id} {' '.join(tokens[2:])}')
-                else:
-                    commands.append(f'{branch_id} {' '.join(tokens[2:])} 1')
-                continue
-            else:
-                formatted_values = ' '.join(tokens[2:])
             _value_defs[tokens[0]] = formatted_values
         case 3:
             commands.append(cleanline)

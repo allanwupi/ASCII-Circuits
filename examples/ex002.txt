@@ -1,6 +1,7 @@
 Envelope Detector with Low-Pass Filter
 - Used to demodulate amplitude-modulated (AM) signals
 - Very cheap and easy to build
+
 [SCHEMATIC]
                  +.amp    +.env         # detector has ripples
                  |        |
